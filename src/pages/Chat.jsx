@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useChat } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { MessageCircle, Plus, Copy, LogIn, ArrowLeft, Trash2, AlertTriangle } from "lucide-react";
+import { MessageCircle, Plus, Copy, LogIn, ArrowLeft, Trash2, AlertTriangle, Home, Send, Users, Clock, Search } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 const Chat = () => {
   const { currentUser } = useAuth();
@@ -36,6 +40,9 @@ const Chat = () => {
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [isIndexBuilding, setIsIndexBuilding] = useState(false);
   const [isTerminateDialogOpen, setIsTerminateDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  const messagesEndRef = useRef(null);
 
   // Check for index building error in console logs
   useEffect(() => {
@@ -61,6 +68,21 @@ const Chat = () => {
       console.log = originalConsoleLog;
     };
   }, []);
+
+  // Handle responsive layout
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -146,10 +168,6 @@ const Chat = () => {
     return name.split(" ").map(n => n[0]).join("").toUpperCase();
   };
 
-  const handleBackButton = () => {
-    setCurrentRoom(null);
-  };
-
   const handleTerminateRoom = async () => {
     const result = await terminateRoom();
     
@@ -161,147 +179,272 @@ const Chat = () => {
     }
   };
 
+  // Filter rooms based on search query
+  const filteredRooms = chatRooms.filter(room => 
+    room.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Format timestamp with relative time
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return "Just now";
+    
+    const date = timestamp.toDate();
+    const now = new Date();
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    return format(date, "MMM d, h:mm a");
+  };
+
   return (
-    <div className="container mx-auto py-20 px-4 md:px-6">
+    <div className="container mx-auto py-6 px-4 md:py-10 md:px-6">
       <div className="flex flex-col space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Chat Rooms</h1>
-          <div className="flex space-x-2">
-            {currentRoom && (
-              <Button variant="outline" size="sm" onClick={handleBackButton}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Rooms
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <Link to="/">
+              <Button variant="outline" size="sm" className="mr-4">
+                <Home className="h-4 w-4 mr-2" />
+                Home
               </Button>
-            )}
-            <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Join Room
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Join a Chat Room</DialogTitle>
-                  <DialogDescription>
-                    Enter the token provided by the room creator.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="token">Room Token</Label>
-                    <Input
-                      id="token"
-                      placeholder="Enter room token"
-                      value={roomToken}
-                      onChange={(e) => setRoomToken(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleJoinRoom}>Join Room</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            </Link>
+            <h1 className="text-2xl md:text-3xl font-bold">Chat Rooms</h1>
+          </div>
+          <div className="flex space-x-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="hidden sm:flex">
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Join Room
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Join a Chat Room</DialogTitle>
+                        <DialogDescription>
+                          Enter the token provided by the room creator.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="token">Room Token</Label>
+                          <Input
+                            id="token"
+                            placeholder="Enter room token"
+                            value={roomToken}
+                            onChange={(e) => setRoomToken(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleJoinRoom}>Join Room</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Join an existing chat room</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Room
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create a New Chat Room</DialogTitle>
-                  <DialogDescription>
-                    Give your room a name. You'll receive a token that others can use to join.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="name">Room Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter room name"
-                      value={newRoomName}
-                      onChange={(e) => setNewRoomName(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button onClick={handleCreateRoom}>Create Room</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="icon" className="sm:hidden">
+                        <LogIn className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Join an existing chat room</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="hidden sm:flex">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Room
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Create a New Chat Room</DialogTitle>
+                        <DialogDescription>
+                          Give your room a name. You'll receive a token that others can use to join.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="name">Room Name</Label>
+                          <Input
+                            id="name"
+                            placeholder="Enter room name"
+                            value={newRoomName}
+                            onChange={(e) => setNewRoomName(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleCreateRoom}>Create Room</Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Create a new chat room</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="icon" className="sm:hidden">
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </DialogTrigger>
+                  </Dialog>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Create a new chat room</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Room List */}
-          <div className="md:col-span-1">
-            <Card className="h-[calc(100vh-200px)]">
-              <CardHeader>
-                <CardTitle>Your Rooms</CardTitle>
-                <CardDescription>
-                  Select a room to start chatting
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex items-center justify-center h-40">
-                    <p>Loading rooms...</p>
+        <div className={cn(
+          "grid gap-6",
+          isMobileView && currentRoom ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3"
+        )}>
+          {/* Room List - Hide on mobile when a room is selected */}
+          {(!isMobileView || !currentRoom) && (
+            <div className="md:col-span-1">
+              <Card className="h-[calc(100vh-180px)]">
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Your Rooms</CardTitle>
+                    <Badge variant="outline" className="font-normal">
+                      {chatRooms.length} {chatRooms.length === 1 ? 'room' : 'rooms'}
+                    </Badge>
                   </div>
-                ) : chatRooms.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-40 text-center">
-                    <MessageCircle className="h-10 w-10 text-muted-foreground mb-2" />
-                    <p className="text-muted-foreground">No chat rooms yet</p>
-                    <p className="text-sm text-muted-foreground">Create or join a room to start chatting</p>
+                  <div className="relative mt-2">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search rooms..."
+                      className="pl-8"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
                   </div>
-                ) : (
-                  <ScrollArea className="h-[calc(100vh-300px)]">
-                    <div className="space-y-2">
-                      {chatRooms.map((room) => (
-                        <div
-                          key={room.id}
-                          className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                            currentRoom?.id === room.id
-                              ? "bg-primary/10 border border-primary/20"
-                              : "hover:bg-secondary"
-                          }`}
-                          onClick={() => setCurrentRoom(room)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h3 className="font-medium">{room.name}</h3>
-                              <p className="text-xs text-muted-foreground">
-                                {room.participants?.length || 1} participants
-                              </p>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                copyTokenToClipboard(room.token);
-                              }}
-                              title="Copy room token"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                </CardHeader>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-40">
+                      <div className="flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
+                        <p className="text-sm text-muted-foreground">Loading rooms...</p>
+                      </div>
                     </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                  ) : filteredRooms.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 text-center p-4">
+                      {searchQuery ? (
+                        <>
+                          <Search className="h-10 w-10 text-muted-foreground mb-2" />
+                          <p className="text-muted-foreground">No rooms match your search</p>
+                          <p className="text-sm text-muted-foreground">Try a different search term</p>
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle className="h-10 w-10 text-muted-foreground mb-2" />
+                          <p className="text-muted-foreground">No chat rooms yet</p>
+                          <p className="text-sm text-muted-foreground">Create or join a room to start chatting</p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-[calc(100vh-260px)]">
+                      <div className="space-y-1 p-2">
+                        {filteredRooms.map((room) => (
+                          <div
+                            key={room.id}
+                            className={cn(
+                              "p-3 rounded-lg cursor-pointer transition-all hover:bg-secondary/80",
+                              currentRoom?.id === room.id
+                                ? "bg-primary/10 border border-primary/20"
+                                : "hover:bg-secondary"
+                            )}
+                            onClick={() => setCurrentRoom(room)}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center">
+                                  <h3 className="font-medium truncate">{room.name}</h3>
+                                  {room.createdBy === currentUser.uid && (
+                                    <Badge variant="secondary" className="ml-2 text-xs">Owner</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center text-xs text-muted-foreground mt-1">
+                                  <Users className="h-3 w-3 mr-1" />
+                                  <span>{room.participants?.length || 1}</span>
+                                  <span className="mx-1">•</span>
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  <span>{room.createdAt ? formatTimestamp(room.createdAt) : "Just now"}</span>
+                                </div>
+                              </div>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyTokenToClipboard(room.token);
+                                      }}
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Copy room token</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Chat Area */}
-          <div className="md:col-span-2">
-            <Card className="h-[calc(100vh-200px)] flex flex-col">
+          <div className={cn(
+            isMobileView && currentRoom ? "col-span-1" : "md:col-span-2"
+          )}>
+            <Card className="h-[calc(100vh-180px)] flex flex-col">
               {!currentRoom ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                   <MessageCircle className="h-16 w-16 text-muted-foreground mb-4" />
@@ -309,7 +452,7 @@ const Chat = () => {
                   <p className="text-muted-foreground mb-4">
                     Select a room from the list or create a new one to start chatting
                   </p>
-                  <div className="flex space-x-4">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                     <Button variant="outline" onClick={() => setIsJoinDialogOpen(true)}>
                       <LogIn className="h-4 w-4 mr-2" />
                       Join Room
@@ -322,28 +465,42 @@ const Chat = () => {
                 </div>
               ) : (
                 <>
-                  <CardHeader className="border-b">
+                  <CardHeader className="border-b py-3 px-4">
                     <div className="flex justify-between items-center">
-                      <div>
-                        <CardTitle>{currentRoom.name}</CardTitle>
-                        <CardDescription>
-                          Room Token: {currentRoom.token}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-4 w-4 ml-2"
-                            onClick={() => copyTokenToClipboard(currentRoom.token)}
+                      <div className="flex items-center">
+                        {isMobileView && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="mr-2" 
+                            onClick={() => setCurrentRoom(null)}
                           >
-                            <Copy className="h-3 w-3" />
+                            <ArrowLeft className="h-4 w-4" />
                           </Button>
-                        </CardDescription>
+                        )}
+                        <div>
+                          <CardTitle className="text-lg">{currentRoom.name}</CardTitle>
+                          <div className="flex items-center">
+                            <CardDescription className="text-xs">
+                              {currentRoom.participants?.length || 1} participants
+                            </CardDescription>
+                            <span className="mx-1 text-xs text-muted-foreground">•</span>
+                            <CardDescription 
+                              className="text-xs flex items-center cursor-pointer hover:underline"
+                              onClick={() => copyTokenToClipboard(currentRoom.token)}
+                            >
+                              Token: {currentRoom.token}
+                              <Copy className="h-3 w-3 ml-1" />
+                            </CardDescription>
+                          </div>
+                        </div>
                       </div>
                       {currentRoom.createdBy === currentUser.uid && (
                         <AlertDialog open={isTerminateDialogOpen} onOpenChange={setIsTerminateDialogOpen}>
                           <AlertDialogTrigger asChild>
                             <Button variant="destructive" size="sm">
                               <Trash2 className="h-4 w-4 mr-2" />
-                              Terminate Chat
+                              <span className="hidden sm:inline">Terminate</span>
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
@@ -384,50 +541,89 @@ const Chat = () => {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {messages.map((msg) => (
-                            <div
-                              key={msg.id}
-                              className={`flex ${
-                                msg.userId === currentUser.uid ? "justify-end" : "justify-start"
-                              }`}
-                            >
+                          {messages.map((msg, index) => {
+                            const isFirstInGroup = index === 0 || 
+                              messages[index - 1].userId !== msg.userId;
+                            const isLastInGroup = index === messages.length - 1 || 
+                              messages[index + 1].userId !== msg.userId;
+                            
+                            return (
                               <div
-                                className={`flex max-w-[80%] ${
-                                  msg.userId === currentUser.uid ? "flex-row-reverse" : "flex-row"
-                                }`}
+                                key={msg.id}
+                                className={cn(
+                                  "flex",
+                                  msg.userId === currentUser.uid ? "justify-end" : "justify-start",
+                                  !isLastInGroup && "mb-1"
+                                )}
                               >
-                                <Avatar className={`h-8 w-8 ${msg.userId === currentUser.uid ? "ml-2" : "mr-2"}`}>
-                                  <AvatarFallback>{getInitials(msg.userName)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                  <div
-                                    className={`rounded-lg px-3 py-2 ${
-                                      msg.userId === currentUser.uid
-                                        ? msg.isTemp 
-                                          ? "bg-primary/70 text-primary-foreground" 
-                                          : "bg-primary text-primary-foreground"
-                                        : "bg-secondary"
-                                    }`}
-                                  >
-                                    <p className="text-sm">{msg.message}</p>
-                                  </div>
-                                  <div
-                                    className={`flex text-xs text-muted-foreground mt-1 ${
-                                      msg.userId === currentUser.uid ? "justify-end" : "justify-start"
-                                    }`}
-                                  >
-                                    <span>{msg.userName}</span>
-                                    <span className="mx-1">•</span>
-                                    <span>
-                                      {msg.isTemp 
-                                        ? "Sending..." 
-                                        : msg.timestamp ? format(msg.timestamp.toDate(), "p") : "Just now"}
-                                    </span>
+                                <div
+                                  className={cn(
+                                    "flex max-w-[85%]",
+                                    msg.userId === currentUser.uid ? "flex-row-reverse" : "flex-row"
+                                  )}
+                                >
+                                  {isLastInGroup && (
+                                    <Avatar className={cn(
+                                      "h-8 w-8",
+                                      msg.userId === currentUser.uid ? "ml-2" : "mr-2"
+                                    )}>
+                                      <AvatarFallback>{getInitials(msg.userName)}</AvatarFallback>
+                                    </Avatar>
+                                  )}
+                                  <div>
+                                    <div
+                                      className={cn(
+                                        "px-3 py-2",
+                                        msg.userId === currentUser.uid
+                                          ? msg.isTemp 
+                                            ? "bg-primary/70 text-primary-foreground" 
+                                            : "bg-primary text-primary-foreground"
+                                          : "bg-secondary",
+                                        isFirstInGroup && msg.userId === currentUser.uid 
+                                          ? "rounded-t-lg rounded-bl-lg rounded-br-sm" 
+                                          : isFirstInGroup 
+                                            ? "rounded-t-lg rounded-br-lg rounded-bl-sm"
+                                            : isLastInGroup && msg.userId === currentUser.uid
+                                              ? "rounded-b-lg rounded-bl-lg rounded-tr-sm"
+                                              : isLastInGroup
+                                                ? "rounded-b-lg rounded-br-lg rounded-tl-sm"
+                                                : msg.userId === currentUser.uid
+                                                  ? "rounded-l-lg rounded-tr-sm rounded-br-sm"
+                                                  : "rounded-r-lg rounded-tl-sm rounded-bl-sm"
+                                      )}
+                                    >
+                                      {isFirstInGroup && (
+                                        <p className={cn(
+                                          "text-xs font-medium mb-1",
+                                          msg.userId === currentUser.uid 
+                                            ? "text-primary-foreground/90" 
+                                            : "text-foreground/90"
+                                        )}>
+                                          {msg.userName}
+                                        </p>
+                                      )}
+                                      <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                                    </div>
+                                    {isLastInGroup && (
+                                      <div
+                                        className={cn(
+                                          "flex text-xs text-muted-foreground mt-1",
+                                          msg.userId === currentUser.uid ? "justify-end mr-2" : "justify-start ml-2"
+                                        )}
+                                      >
+                                        <span>
+                                          {msg.isTemp 
+                                            ? "Sending..." 
+                                            : msg.timestamp ? formatTimestamp(msg.timestamp) : "Just now"}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
+                          <div ref={messagesEndRef} />
                         </div>
                       )}
                     </ScrollArea>
@@ -440,8 +636,13 @@ const Chat = () => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         className="flex-grow"
                       />
-                      <Button type="submit" disabled={!newMessage.trim()}>
-                        Send
+                      <Button 
+                        type="submit" 
+                        disabled={!newMessage.trim()}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        <Send className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Send</span>
                       </Button>
                     </form>
                   </CardFooter>
