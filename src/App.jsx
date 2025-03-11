@@ -86,9 +86,9 @@ const App = () => {
   }, []);
 
   // Conditionally render offline page
-  // if (!isOnline) {
-  //   return <Offline />;
-  // }
+  if (!isOnline) {
+    return <Offline />;
+  }
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="notes-nexus-theme">
