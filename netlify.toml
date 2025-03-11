@@ -1,6 +1,9 @@
 [build]
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps --omit=optional && npm run build"
   publish = "dist" # or your build output directory
 
 [build.environment]
-  NODE_VERSION = "18.17.0" # or another LTS version 
+  NODE_VERSION = "20.12.2"
+
+# Keep your existing build settings below
+# ...existing code... 
