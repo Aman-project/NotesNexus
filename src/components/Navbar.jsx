@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronRight, Home, BookOpen, Video, MessageSquare, User } from "lucide-react";
+import { Menu, X, ChevronRight, Home, BookOpen, Video, MessageSquare, User, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -18,6 +18,7 @@ const Navbar = () => {
     { name: "Home", path: "/", icon: Home },
     { name: "Notes", path: "/notes", icon: BookOpen },
     { name: "Videos", path: "/videos", icon: Video },
+    { name: "Chat", path: "/chat", icon: MessageCircle },
     { name: "Contact", path: "/contact", icon: MessageSquare },
   ];
 

@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, createBrowserRouter, RouterProvider } fro
 import { ThemeProvider } from "@/hooks/use-theme";
 import { useState, useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ChatProvider } from "@/contexts/ChatContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WelcomeGreeting from "@/components/WelcomeGreeting";
 import Index from "./pages/Index";
@@ -17,6 +18,7 @@ import Auth from "./pages/Auth";
 import Offline from "./pages/Offline";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Chat from "./pages/Chat";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +39,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <Videos />
+        </ProtectedRoute>
+      ) 
+    },
+    { 
+      path: "/chat", 
+      element: (
+        <ProtectedRoute>
+          <Chat />
         </ProtectedRoute>
       ) 
     },
@@ -94,12 +104,14 @@ const App = () => {
     <ThemeProvider defaultTheme="system" storageKey="notes-nexus-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <WelcomeGreeting />
-            <RouterProvider router={router} />
-          </TooltipProvider>
+          <ChatProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <WelcomeGreeting />
+              <RouterProvider router={router} />
+            </TooltipProvider>
+          </ChatProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
