@@ -1,6 +1,6 @@
 [build]
-  command = "npm install --legacy-peer-deps --omit=optional && npm run build"
-  publish = "dist" # or your build output directory
+  command = "npm install --legacy-peer-deps && npm run build"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20.12.2"
