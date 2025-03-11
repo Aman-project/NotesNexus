@@ -92,7 +92,6 @@
     "@vitejs/plugin-react-swc": "^3.8.0"
   },
   "engines": {
-    "node": ">=20.12.2",
-    "npm": ">=10.2.0"
+    "node": "20.12.2"
   }
 }
