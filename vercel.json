@@ -1,16 +1,20 @@
 {
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
-    }
-  ],
+  "version": 2,
   "buildCommand": "npm i --no-optional && npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
   "routes": [
     {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*)\\.(.+)",
+      "dest": "/$1.$2"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/index.html"
     }
-  ],
-  "outputDirectory": "build"
+  ]
 } 
