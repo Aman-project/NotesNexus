@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => ({
       timeout: 2000,
     },
   },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: mode === 'development'
+  },
   plugins: [
     react({
       fastRefresh: true,

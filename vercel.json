@@ -1,20 +1,12 @@
 {
   "version": 2,
-  "buildCommand": "npm i --no-optional && npm run build",
-  "outputDirectory": "dist",
   "framework": "vite",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --no-optional",
+  "outputDirectory": "dist",
   "routes": [
-    {
-      "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*)\\.(.+)",
-      "dest": "/$1.$2"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+    { "handle": "filesystem" },
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 } 
