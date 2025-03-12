@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WelcomeGreeting from "@/components/WelcomeGreeting";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Notes from "./pages/Notes";
@@ -26,11 +27,20 @@ const queryClient = new QueryClient();
 // Create router with future flags
 const router = createBrowserRouter(
   [
-    { path: "/", element: <Index /> },
+    { 
+      path: "/", 
+      element: (
+        <>
+          <ScrollToTop />
+          <Index />
+        </>
+      )
+    },
     { 
       path: "/notes", 
       element: (
         <ProtectedRoute>
+          <ScrollToTop />
           <Notes />
         </ProtectedRoute>
       ) 
@@ -39,6 +49,7 @@ const router = createBrowserRouter(
       path: "/videos", 
       element: (
         <ProtectedRoute>
+          <ScrollToTop />
           <Videos />
         </ProtectedRoute>
       ) 
@@ -47,6 +58,7 @@ const router = createBrowserRouter(
       path: "/chat", 
       element: (
         <ProtectedRoute>
+          <ScrollToTop />
           <Chat />
         </ProtectedRoute>
       ) 
@@ -55,6 +67,7 @@ const router = createBrowserRouter(
       path: "/profile", 
       element: (
         <ProtectedRoute>
+          <ScrollToTop />
           <Profile />
         </ProtectedRoute>
       ) 
@@ -63,6 +76,7 @@ const router = createBrowserRouter(
       path: "/settings", 
       element: (
         <ProtectedRoute>
+          <ScrollToTop />
           <Settings />
         </ProtectedRoute>
       ) 
@@ -71,14 +85,47 @@ const router = createBrowserRouter(
       path: "/verify-email", 
       element: (
         <ProtectedRoute>
+          <ScrollToTop />
           <VerifyEmail />
         </ProtectedRoute>
       ) 
     },
-    { path: "/contact", element: <Contact /> },
-    { path: "/auth", element: <Auth /> },
-    { path: "/offline", element: <Offline /> },
-    { path: "*", element: <NotFound /> }
+    { 
+      path: "/contact", 
+      element: (
+        <>
+          <ScrollToTop />
+          <Contact />
+        </>
+      )
+    },
+    { 
+      path: "/auth", 
+      element: (
+        <>
+          <ScrollToTop />
+          <Auth />
+        </>
+      )
+    },
+    { 
+      path: "/offline", 
+      element: (
+        <>
+          <ScrollToTop />
+          <Offline />
+        </>
+      )
+    },
+    { 
+      path: "*", 
+      element: (
+        <>
+          <ScrollToTop />
+          <NotFound />
+        </>
+      )
+    }
   ],
   {
     future: {
