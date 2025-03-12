@@ -66,10 +66,10 @@ export const ChatProvider = ({ children }) => {
     return () => unsubscribe();
   }, [currentRoom]);
 
-  const createRoom = async (name) => {
+  const createRoom = async (name, participantLimit) => {
     if (!currentUser) return { success: false, error: "You must be logged in" };
     
-    const result = await createChatRoom(name, currentUser.uid);
+    const result = await createChatRoom(name, currentUser.uid, participantLimit);
     
     if (result.error) {
       return { success: false, error: result.error };

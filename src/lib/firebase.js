@@ -107,7 +107,7 @@ export const verifyEmail = async (actionCode) => {
 };
 
 // Chat functions
-export const createChatRoom = async (name, createdBy) => {
+export const createChatRoom = async (name, createdBy, participantLimit) => {
   try {
     // Generate a random 6-character token
     const token = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -117,7 +117,8 @@ export const createChatRoom = async (name, createdBy) => {
       createdBy,
       createdAt: serverTimestamp(),
       token,
-      participants: [createdBy]
+      participants: [createdBy],
+      participantLimit: participantLimit || 10 // Default to 10 if not specified
     });
     
     return { roomId: roomRef.id, token, error: null };
@@ -139,13 +140,20 @@ export const joinChatRoom = async (token, userId) => {
     const roomData = roomDoc.data();
     
     // Check if user is already a participant
-    if (!roomData.participants.includes(userId)) {
-      // Add user to participants
-      const roomRef = doc(db, "chatRooms", roomDoc.id);
-      await updateDoc(roomRef, {
-        participants: [...roomData.participants, userId]
-      });
+    if (roomData.participants.includes(userId)) {
+      return { success: true, roomId: roomDoc.id, error: null };
     }
+
+    // Check participant limit
+    if (roomData.participants.length >= roomData.participantLimit) {
+      return { success: false, error: "This room has reached its participant limit" };
+    }
+    
+    // Add user to participants
+    const roomRef = doc(db, "chatRooms", roomDoc.id);
+    await updateDoc(roomRef, {
+      participants: [...roomData.participants, userId]
+    });
     
     return { success: true, roomId: roomDoc.id, error: null };
   } catch (error) {

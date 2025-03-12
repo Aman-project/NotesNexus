@@ -36,6 +36,7 @@ const Chat = () => {
   const [newMessage, setNewMessage] = useState("");
   const [newRoomName, setNewRoomName] = useState("");
   const [roomToken, setRoomToken] = useState("");
+  const [participantLimit, setParticipantLimit] = useState(10);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [isIndexBuilding, setIsIndexBuilding] = useState(false);
@@ -124,14 +125,20 @@ const Chat = () => {
       toast.error("Please enter a room name");
       return;
     }
+
+    if (participantLimit < 2) {
+      toast.error("Participant limit must be at least 2");
+      return;
+    }
     
-    const result = await createRoom(newRoomName);
+    const result = await createRoom(newRoomName, participantLimit);
     
     if (result.error) {
       toast.error(result.error);
     } else {
       toast.success(`Room created! Token: ${result.token}`);
       setNewRoomName("");
+      setParticipantLimit(10);
       setIsCreateDialogOpen(false);
       
       // Find the newly created room in chatRooms and set it as current
@@ -216,119 +223,147 @@ const Chat = () => {
             <h1 className="text-2xl md:text-3xl font-bold">Chat Rooms</h1>
           </div>
           <div className="flex space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="hidden sm:flex">
-                        <LogIn className="h-4 w-4 mr-2" />
-                        Join Room
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Join a Chat Room</DialogTitle>
-                        <DialogDescription>
-                          Enter the token provided by the room creator.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="token">Room Token</Label>
-                          <Input
-                            id="token"
-                            placeholder="Enter room token"
-                            value={roomToken}
-                            onChange={(e) => setRoomToken(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={handleJoinRoom}>Join Room</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Join an existing chat room</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="icon" className="sm:hidden">
-                        <LogIn className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Join an existing chat room</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="hidden sm:flex">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Create Room
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Create a New Chat Room</DialogTitle>
-                        <DialogDescription>
-                          Give your room a name. You'll receive a token that others can use to join.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="name">Room Name</Label>
-                          <Input
-                            id="name"
-                            placeholder="Enter room name"
-                            value={newRoomName}
-                            onChange={(e) => setNewRoomName(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={handleCreateRoom}>Create Room</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Create a new chat room</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="icon" className="sm:hidden">
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Create a new chat room</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {/* Join Room - Desktop */}
+            <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+              <DialogTrigger asChild>
+                <div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="sm" className="hidden sm:flex">
+                          <LogIn className="h-4 w-4 mr-2" />
+                          Join Room
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Join an existing chat room</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Join a Chat Room</DialogTitle>
+                  <DialogDescription>
+                    Enter the token provided by the room creator.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="token">Room Token</Label>
+                    <Input
+                      id="token"
+                      placeholder="Enter room token"
+                      value={roomToken}
+                      onChange={(e) => setRoomToken(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleJoinRoom}>Join Room</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Join Room - Mobile */}
+            <Dialog open={isJoinDialogOpen} onOpenChange={setIsJoinDialogOpen}>
+              <DialogTrigger asChild>
+                <div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" className="sm:hidden">
+                          <LogIn className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Join an existing chat room</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </DialogTrigger>
+            </Dialog>
+
+            {/* Create Room - Desktop */}
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button className="hidden sm:flex">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Room
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Create a new chat room</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Create a New Chat Room</DialogTitle>
+                  <DialogDescription>
+                    Give your room a name and set the maximum number of participants allowed to join.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Room Name</Label>
+                    <Input
+                      id="name"
+                      placeholder="Enter room name"
+                      value={newRoomName}
+                      onChange={(e) => setNewRoomName(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="limit">Maximum Participants</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="limit"
+                        type="number"
+                        min="2"
+                        max="100"
+                        value={participantLimit}
+                        onChange={(e) => setParticipantLimit(Math.max(2, Math.min(100, parseInt(e.target.value) || 2)))}
+                      />
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        (2-100 people)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleCreateRoom}>Create Room</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Create Room - Mobile */}
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" className="sm:hidden">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Create a new chat room</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </DialogTrigger>
+            </Dialog>
           </div>
         </div>
 
