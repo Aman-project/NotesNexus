@@ -38,9 +38,10 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const { toast } = useToast();
 
+  // Redirect non-admin users immediately
   useEffect(() => {
     if (!isLoading && !isAdmin) {
-      navigate("/");
+      navigate("/", { replace: true });
     }
   }, [isAdmin, isLoading, navigate]);
 
@@ -122,6 +123,7 @@ const AdminDashboard = () => {
     }
   };
 
+  // Don't render anything while loading or if not admin
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">

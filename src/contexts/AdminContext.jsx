@@ -19,9 +19,10 @@ export const AdminProvider = ({ children }) => {
   const [allUsers, setAllUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if current user is admin
+  // Check if current user is admin with persistent listener
   useEffect(() => {
     let isMounted = true;
+    let unsubscribeAdminStatus = null;
 
     if (!currentUser) {
       setIsAdmin(false);
@@ -29,30 +30,37 @@ export const AdminProvider = ({ children }) => {
       return;
     }
 
-    const checkAdminStatus = async () => {
-      try {
-        const userRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        
-        if (userSnap.exists() && isMounted) {
-          setIsAdmin(userSnap.data().isAdmin === true);
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      
+      // Set up a real-time listener for admin status changes
+      unsubscribeAdminStatus = onSnapshot(userRef, (docSnap) => {
+        if (docSnap.exists() && isMounted) {
+          const userData = docSnap.data();
+          setIsAdmin(userData.isAdmin === true);
         }
         
         if (isMounted) {
           setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error checking admin status:", error);
+      }, (error) => {
+        console.error("Error listening to admin status:", error);
         if (isMounted) {
           setIsLoading(false);
         }
+      });
+    } catch (error) {
+      console.error("Error setting up admin status listener:", error);
+      if (isMounted) {
+        setIsLoading(false);
       }
-    };
-
-    checkAdminStatus();
+    }
 
     return () => {
       isMounted = false;
+      if (unsubscribeAdminStatus) {
+        unsubscribeAdminStatus();
+      }
     };
   }, [currentUser]);
 
