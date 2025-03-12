@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail, sendEmailVerification, applyActionCode } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, doc, getDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, doc, getDoc, updateDoc, writeBatch, setDoc } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -22,37 +22,173 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 
-// Authentication functions
+// Update user online status
+const updateOnlineStatus = async (userId, isOnline) => {
+  if (!userId) return;
+  
+  try {
+    const userRef = doc(db, "users", userId);
+    await setDoc(userRef, {
+      isOnline,
+      lastSeen: serverTimestamp(),
+    }, { merge: true });
+  } catch (error) {
+    console.error("Error updating online status:", error);
+  }
+};
+
+// Set up presence system
+export const setupPresence = (userId) => {
+  if (!userId) return () => {}; // Return empty cleanup function if no userId
+
+  let unsubscribe = null;
+  let cleanupFunctions = [];
+
+  // Handle visibility change
+  const handleVisibilityChange = async () => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, {
+        isOnline: document.visibilityState === "visible",
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+    } catch (error) {
+      console.error("Error updating visibility status:", error);
+    }
+  };
+
+  // Handle before unload
+  const handleBeforeUnload = async () => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, {
+        isOnline: false,
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+    } catch (error) {
+      console.error("Error updating offline status:", error);
+    }
+  };
+
+  // Set initial online status
+  const setInitialStatus = async () => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, {
+        isOnline: true,
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+    } catch (error) {
+      console.error("Error setting initial status:", error);
+    }
+  };
+
+  // Set up event listeners
+  window.addEventListener("visibilitychange", handleVisibilityChange);
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  cleanupFunctions.push(() => {
+    window.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("beforeunload", handleBeforeUnload);
+  });
+
+  // Set initial status
+  setInitialStatus();
+
+  // Return cleanup function
+  return () => {
+    // Clean up event listeners
+    cleanupFunctions.forEach(cleanup => cleanup());
+    
+    // Clean up connection listener if it exists
+    if (unsubscribe) {
+      unsubscribe();
+    }
+    
+    // Set offline status one last time
+    const userRef = doc(db, "users", userId);
+    setDoc(userRef, {
+      isOnline: false,
+      lastSeen: serverTimestamp(),
+    }, { merge: true }).catch(error => {
+      console.error("Error cleaning up presence:", error);
+    });
+  };
+};
+
+// Register user with admin check
 export const registerUser = async (email, password, name) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
     // Update the user profile with the name
     if (userCredential.user) {
       await updateProfile(userCredential.user, {
         displayName: name
       });
+      
+      // Create user document
+      const userRef = doc(db, "users", userCredential.user.uid);
+      await setDoc(userRef, {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: name,
+        photoURL: null,
+        isAdmin: false,
+        isOnline: true,
+        createdAt: serverTimestamp(),
+        lastSeen: serverTimestamp(),
+      });
+      
+      // Set up presence
+      setupPresence(userCredential.user.uid);
     }
+    
     return { user: userCredential.user, error: null };
   } catch (error) {
     return { user: null, error: error.message || "Registration failed" };
   }
 };
 
+// Login user with online status update
 export const loginUser = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    if (userCredential.user) {
+      // Update online status
+      const userRef = doc(db, "users", userCredential.user.uid);
+      await setDoc(userRef, {
+        isOnline: true,
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+      
+      // Set up presence
+      setupPresence(userCredential.user.uid);
+    }
+    
     return { user: userCredential.user, error: null };
   } catch (error) {
     return { user: null, error: error.message || "Login failed" };
   }
 };
 
+// Logout user with offline status update
 export const logoutUser = async () => {
   try {
+    const userId = auth.currentUser?.uid;
+    
+    if (userId) {
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, {
+        isOnline: false,
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+    }
+    
     await signOut(auth);
-    return { success: true, error: null };
+    return { error: null };
   } catch (error) {
-    return { success: false, error: error.message || "Logout failed" };
+    return { error: error.message || "Logout failed" };
   }
 };
 

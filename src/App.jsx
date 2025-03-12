@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, createBrowserRouter, RouterProvider } fro
 import { ThemeProvider } from "@/hooks/use-theme";
 import { useState, useEffect } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AdminProvider } from "@/contexts/AdminContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import WelcomeGreeting from "@/components/WelcomeGreeting";
@@ -21,6 +22,7 @@ import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Chat from "./pages/Chat";
 import VerifyEmail from "./pages/VerifyEmail";
+import AdminDashboard from "@/pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +80,15 @@ const router = createBrowserRouter(
         <ProtectedRoute>
           <ScrollToTop />
           <Settings />
+        </ProtectedRoute>
+      ) 
+    },
+    { 
+      path: "/admin", 
+      element: (
+        <ProtectedRoute>
+          <ScrollToTop />
+          <AdminDashboard />
         </ProtectedRoute>
       ) 
     },
@@ -160,14 +171,16 @@ const App = () => {
     <ThemeProvider defaultTheme="system" storageKey="notes-nexus-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <ChatProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <WelcomeGreeting />
-              <RouterProvider router={router} />
-            </TooltipProvider>
-          </ChatProvider>
+          <AdminProvider>
+            <ChatProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <WelcomeGreeting />
+                <RouterProvider router={router} />
+              </TooltipProvider>
+            </ChatProvider>
+          </AdminProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
