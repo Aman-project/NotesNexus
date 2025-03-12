@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { setupPresence } from "@/lib/firebase";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { logoutUser } from "@/lib/firebase";
 
 const AuthContext = createContext({
   currentUser: null,
@@ -16,6 +18,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     let cleanupPresence = null;
+    let userDocUnsubscribe = null;
     
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -27,9 +30,34 @@ export const AuthProvider = ({ children }) => {
         cleanupPresence = null;
       }
       
+      // Clean up previous user doc listener
+      if (userDocUnsubscribe) {
+        userDocUnsubscribe();
+        userDocUnsubscribe = null;
+      }
+      
       // Set up presence for the current user
       if (user) {
         cleanupPresence = setupPresence(user.uid);
+        
+        // Listen for force logout flag
+        const userRef = doc(db, "users", user.uid);
+        userDocUnsubscribe = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            if (userData.forceLogout === true) {
+              // Reset the flag first to prevent logout loop
+              setDoc(userRef, { forceLogout: false }, { merge: true })
+                .then(() => {
+                  // Then logout the user
+                  logoutUser();
+                })
+                .catch(error => {
+                  console.error("Error resetting force logout flag:", error);
+                });
+            }
+          }
+        });
       }
     });
 
@@ -37,6 +65,9 @@ export const AuthProvider = ({ children }) => {
       unsubscribe();
       if (cleanupPresence) {
         cleanupPresence();
+      }
+      if (userDocUnsubscribe) {
+        userDocUnsubscribe();
       }
     };
   }, []);

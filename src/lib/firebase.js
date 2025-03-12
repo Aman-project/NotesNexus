@@ -462,4 +462,40 @@ export const terminateChatRoom = async (roomId, userId) => {
   }
 };
 
+// Admin force logout user
+export const adminForceLogoutUser = async (userId) => {
+  try {
+    if (!userId) {
+      return { success: false, error: "User ID is required" };
+    }
+    
+    const userRef = doc(db, "users", userId);
+    await setDoc(userRef, {
+      isOnline: false,
+      lastSeen: serverTimestamp(),
+      forceLogout: true,
+    }, { merge: true });
+    
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Admin force logout error:", error);
+    return { success: false, error: error.message || "Failed to force logout user" };
+  }
+};
+
+// Admin reset user password
+export const adminResetUserPassword = async (userEmail) => {
+  try {
+    if (!userEmail) {
+      return { success: false, error: "User email is required" };
+    }
+    
+    await sendPasswordResetEmail(auth, userEmail);
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("Admin reset password error:", error);
+    return { success: false, error: error.message || "Failed to reset user password" };
+  }
+};
+
 export { auth, db }; 
