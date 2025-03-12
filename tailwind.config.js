@@ -133,7 +133,40 @@ export default {
 				'blur-2xl': 'blur(40px)',
 				'blur-3xl': 'blur(64px)',
 			},
+			boxShadow: {
+				'dark-sm': '0 1px 2px 0 rgba(0, 0, 0, 0.25)',
+				'dark-md': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.25)',
+				'dark-lg': '0 10px 15px -3px rgba(0, 0, 0, 0.35), 0 4px 6px -2px rgba(0, 0, 0, 0.25)',
+				'dark-xl': '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3)',
+			},
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		function({ addBase, addComponents, theme }) {
+			addBase({
+				'.dark': {
+					'--shadow-color': '0deg 0% 0%',
+					'--shadow-elevation-low': 
+						'0px 0.5px 0.6px hsl(var(--shadow-color) / 0.34), 0px 0.8px 1px -1.2px hsl(var(--shadow-color) / 0.34), 0px 2px 2.5px -2.5px hsl(var(--shadow-color) / 0.34)',
+					'--shadow-elevation-medium': 
+						'0px 0.5px 0.6px hsl(var(--shadow-color) / 0.36), 0px 1.8px 2.3px -0.8px hsl(var(--shadow-color) / 0.36), 0px 4.5px 5.6px -1.7px hsl(var(--shadow-color) / 0.36), 0px 11px 13.7px -2.5px hsl(var(--shadow-color) / 0.36)',
+					'--shadow-elevation-high': 
+						'0px 0.5px 0.6px hsl(var(--shadow-color) / 0.34), 0px 3.3px 4.1px -0.4px hsl(var(--shadow-color) / 0.34), 0px 6.2px 7.7px -0.7px hsl(var(--shadow-color) / 0.34), 0px 10.1px 12.6px -1.1px hsl(var(--shadow-color) / 0.34), 0px 16.3px 20.3px -1.4px hsl(var(--shadow-color) / 0.34), 0px 25.6px 31.9px -1.8px hsl(var(--shadow-color) / 0.34), 0px 38.6px 48.1px -2.1px hsl(var(--shadow-color) / 0.34), 0px 56.3px 70.2px -2.5px hsl(var(--shadow-color) / 0.34)',
+				}
+			});
+			
+			addComponents({
+				'.shadow-dark-elevation-low': {
+					boxShadow: 'var(--shadow-elevation-low)',
+				},
+				'.shadow-dark-elevation-medium': {
+					boxShadow: 'var(--shadow-elevation-medium)',
+				},
+				'.shadow-dark-elevation-high': {
+					boxShadow: 'var(--shadow-elevation-high)',
+				},
+			});
+		}
+	],
 }

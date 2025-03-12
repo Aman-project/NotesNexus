@@ -94,10 +94,15 @@
     @apply border-border antialiased;
   }
   
+  html {
+    transition: color 0.3s ease, background-color 0.3s ease;
+  }
+  
   body {
     @apply bg-background text-foreground font-inter;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: color 0.3s ease, background-color 0.3s ease;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -163,6 +168,11 @@
   .bg-grid-white {
     background-image: linear-gradient(to right, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
                       linear-gradient(to bottom, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+  }
+  
+  .dark .bg-grid-white {
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   }
   
   /* Page transition animations */

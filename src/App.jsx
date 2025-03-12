@@ -24,6 +24,37 @@ import Chat from "./pages/Chat";
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "@/pages/AdminDashboard";
 
+// Prevent flash of incorrect theme
+const ThemeScript = () => {
+  useEffect(() => {
+    // This script runs on client-side only
+    const script = document.createElement('script');
+    script.innerHTML = `
+      (function() {
+        try {
+          const storedTheme = localStorage.getItem('notes-nexus-theme');
+          if (storedTheme === 'dark' || 
+              (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          console.error('Error applying theme:', e);
+        }
+      })();
+    `;
+    script.async = false;
+    document.head.appendChild(script);
+    
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+  
+  return null;
+};
+
 const queryClient = new QueryClient();
 
 // Create router with future flags
@@ -169,6 +200,7 @@ const App = () => {
 
   return (
     <ThemeProvider defaultTheme="system" storageKey="notes-nexus-theme">
+      <ThemeScript />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <AdminProvider>
