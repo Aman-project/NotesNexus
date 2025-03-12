@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail, sendEmailVerification, applyActionCode } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, doc, getDoc, updateDoc, writeBatch } from "firebase/firestore";
 
 // Your web app's Firebase configuration
@@ -80,6 +80,29 @@ export const resetPassword = async (email) => {
     return { success: true, error: null };
   } catch (error) {
     return { success: false, error: error.message || "Password reset failed" };
+  }
+};
+
+// Add email verification functions
+export const sendVerificationEmail = async () => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      return { success: false, error: "No user is signed in" };
+    }
+    await sendEmailVerification(user);
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: error.message || "Failed to send verification email" };
+  }
+};
+
+export const verifyEmail = async (actionCode) => {
+  try {
+    await applyActionCode(auth, actionCode);
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error: error.message || "Failed to verify email" };
   }
 };
 

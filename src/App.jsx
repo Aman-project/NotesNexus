@@ -19,6 +19,7 @@ import Offline from "./pages/Offline";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Chat from "./pages/Chat";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const queryClient = new QueryClient();
 
@@ -63,6 +64,14 @@ const router = createBrowserRouter(
       element: (
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      ) 
+    },
+    { 
+      path: "/verify-email", 
+      element: (
+        <ProtectedRoute>
+          <VerifyEmail />
         </ProtectedRoute>
       ) 
     },

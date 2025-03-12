@@ -32,8 +32,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { ArrowLeft, Lock, Bell, Shield, Trash2, AlertTriangle } from "lucide-react";
-import { resetPassword, auth } from "@/lib/firebase";
+import { ArrowLeft, Lock, Bell, Shield, Trash2, AlertTriangle, CheckCircle2, Mail } from "lucide-react";
+import { resetPassword, auth, sendVerificationEmail } from "@/lib/firebase";
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from "firebase/auth";
 import {
   Dialog,
@@ -71,6 +71,7 @@ const Settings = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isVerificationEmailSent, setIsVerificationEmailSent] = useState(false);
 
   // Notification settings
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -208,6 +209,35 @@ const Settings = () => {
     }
   };
 
+  const handleSendVerificationEmail = async () => {
+    if (currentUser.emailVerified) {
+      toast({
+        title: "Account already verified",
+        description: "Your email address has already been verified.",
+        duration: 3000,
+      });
+      return;
+    }
+
+    const result = await sendVerificationEmail();
+    
+    if (result.success) {
+      setIsVerificationEmailSent(true);
+      toast({
+        title: "Verification email sent",
+        description: "Please check your email to verify your account.",
+        duration: 5000,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: result.error,
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -277,6 +307,55 @@ const Settings = () => {
 
           <TabsContent value="account">
             <motion.div variants={itemVariants}>
+              <Card className="mb-4">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <CardTitle>Email Verification</CardTitle>
+                      <CardDescription>
+                        Verify your email address to secure your account
+                      </CardDescription>
+                    </div>
+                    {currentUser.emailVerified ? (
+                      <div className="flex items-center text-green-600 dark:text-green-500">
+                        <CheckCircle2 className="h-5 w-5 mr-2" />
+                        <span className="text-sm font-medium">Verified</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-yellow-600 dark:text-yellow-500">
+                        <Mail className="h-5 w-5 mr-2" />
+                        <span className="text-sm font-medium">Not Verified</span>
+                      </div>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      {currentUser.emailVerified
+                        ? "Your email address has been verified. You have access to all account features."
+                        : "Please verify your email address to ensure the security of your account and access all features."}
+                    </p>
+                    {!currentUser.emailVerified && (
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          onClick={handleSendVerificationEmail}
+                          disabled={isVerificationEmailSent}
+                        >
+                          <Mail className="h-4 w-4 mr-2" />
+                          {isVerificationEmailSent ? "Email Sent" : "Send Verification Email"}
+                        </Button>
+                        {isVerificationEmailSent && (
+                          <p className="text-sm text-muted-foreground">
+                            Check your inbox and spam folder
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Account Information</CardTitle>
@@ -299,20 +378,6 @@ const Settings = () => {
                       <p className="text-sm text-muted-foreground">
                         {currentUser.metadata.lastSignInTime ? new Date(currentUser.metadata.lastSignInTime).toLocaleDateString() : "Unknown"}
                       </p>
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium mb-1">Email Verification</h3>
-                      <div className="flex items-center">
-                        {currentUser.emailVerified ? (
-                          <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded-full">
-                            Verified
-                          </span>
-                        ) : (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 px-2 py-0.5 rounded-full">
-                            Not Verified
-                          </span>
-                        )}
-                      </div>
                     </div>
                   </div>
                 </CardContent>
