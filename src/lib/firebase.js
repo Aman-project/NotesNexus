@@ -130,13 +130,14 @@ export const joinChatRoom = async (token, userId) => {
   }
 };
 
-export const sendMessage = async (roomId, userId, userName, message) => {
+export const sendMessage = async (roomId, userId, userName, message, userPhotoURL) => {
   try {
     await addDoc(collection(db, "chatMessages"), {
       roomId,
       userId,
       userName,
       message,
+      userPhotoURL,
       timestamp: serverTimestamp()
     });
     

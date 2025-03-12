@@ -103,7 +103,8 @@ export const ChatProvider = ({ children }) => {
       currentRoom.id, 
       currentUser.uid, 
       currentUser.displayName || "Anonymous", 
-      message
+      message,
+      currentUser.photoURL || null
     );
     
     return result;

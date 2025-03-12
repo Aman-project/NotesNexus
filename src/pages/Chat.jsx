@@ -98,6 +98,7 @@ const Chat = () => {
       roomId: currentRoom.id,
       userId: currentUser.uid,
       userName: currentUser.displayName || "You",
+      userPhotoURL: currentUser.photoURL || null,
       message: messageText,
       timestamp: { toDate: () => new Date() },
       isTemp: true
@@ -562,14 +563,13 @@ const Chat = () => {
                                     msg.userId === currentUser.uid ? "flex-row-reverse" : "flex-row"
                                   )}
                                 >
-                                  {isLastInGroup && (
-                                    <Avatar className={cn(
-                                      "h-8 w-8",
-                                      msg.userId === currentUser.uid ? "ml-2" : "mr-2"
-                                    )}>
-                                      <AvatarFallback>{getInitials(msg.userName)}</AvatarFallback>
-                                    </Avatar>
-                                  )}
+                                  <Avatar className={cn(
+                                    "h-8 w-8",
+                                    msg.userId === currentUser.uid ? "ml-2" : "mr-2"
+                                  )}>
+                                    <AvatarImage src={msg.userPhotoURL} alt={msg.userName} />
+                                    <AvatarFallback>{getInitials(msg.userName)}</AvatarFallback>
+                                  </Avatar>
                                   <div>
                                     <div
                                       className={cn(
