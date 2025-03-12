@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ChevronRight, Home, BookOpen, Video, MessageSquare, User, MessageCircle } from "lucide-react";
+import { Home, BookOpen, Video, MessageSquare, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import UserProfile from "@/components/UserProfile";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
   const { currentUser } = useAuth();
 
@@ -35,22 +34,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  useEffect(() => {
-    // Close mobile menu when route changes
-    setIsMobileMenuOpen(false);
-    
-    // Prevent body scroll when mobile menu is open
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [location.pathname, isMobileMenuOpen]);
-
   // Animation variants
   const navbarVariants = {
     hidden: { opacity: 0, y: -20 },
@@ -69,37 +52,6 @@ const Navbar = () => {
       scale: 1.05,
       transition: { duration: 0.2 }
     }
-  };
-
-  const mobileMenuVariants = {
-    closed: { 
-      opacity: 0,
-      height: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
-    },
-    open: { 
-      opacity: 1,
-      height: "100vh",
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
-    }
-  };
-
-  const mobileMenuItemVariants = {
-    closed: { x: -20, opacity: 0 },
-    open: (i) => ({
-      x: 0,
-      opacity: 1,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.3
-      }
-    })
   };
 
   const bottomNavVariants = {
@@ -185,103 +137,34 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile Menu Toggle - Only visible on small screens but not on xs screens */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden sm:flex md:hidden items-center"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-5 w-5 sm:h-6 sm:w-6 text-premium" />
-            ) : (
-              <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-foreground" />
-            )}
-          </motion.button>
-          
-          {/* Mobile Actions - Only visible on xs screens */}
-          <div className="flex sm:hidden items-center space-x-3">
+          {/* Mobile Actions - Always visible on small to medium screens */}
+          <div className="hidden sm:flex md:hidden items-center space-x-3">
             <ThemeToggle />
             {currentUser ? (
               <UserProfile />
             ) : (
-              <Link to="/auth">
-                <Button size="icon" variant="ghost" className="rounded-full">
-                  <User className="h-5 w-5" />
+              <Link to="/auth?mode=login">
+                <Button variant="outline" size="sm" className="rounded-full border-premium/20 text-premium hover:bg-premium/5 hover:text-premium-dark transition-all duration-200">
+                  Log in
+                </Button>
+              </Link>
+            )}
+          </div>
+          
+          {/* Extra Small Screen Actions */}
+          <div className="flex sm:hidden items-center space-x-2">
+            <ThemeToggle />
+            {currentUser ? (
+              <UserProfile />
+            ) : (
+              <Link to="/auth?mode=login">
+                <Button variant="outline" size="sm" className="rounded-full border-premium/20 text-premium hover:bg-premium/5 hover:text-premium-dark transition-all duration-200">
+                  Log in
                 </Button>
               </Link>
             )}
           </div>
         </div>
-
-        {/* Mobile Menu - Fullscreen overlay */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div 
-              initial="closed"
-              animate="open"
-              exit="closed"
-              variants={mobileMenuVariants}
-              className="md:hidden fixed top-[56px] left-0 right-0 bottom-0 bg-background/98 backdrop-blur-md z-50 border-b border-border overflow-hidden flex flex-col"
-            >
-              <div className="flex flex-col space-y-4 p-6 mt-4">
-                {links.map((link, index) => {
-                  const Icon = link.icon;
-                  return (
-                    <motion.div
-                      key={link.path}
-                      custom={index}
-                      variants={mobileMenuItemVariants}
-                    >
-                      <Link
-                        to={link.path}
-                        className={cn(
-                          "px-4 py-4 text-base rounded-xl transition-all duration-200 flex items-center",
-                          location.pathname === link.path
-                            ? "text-premium font-medium bg-premium/10"
-                            : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                        )}
-                      >
-                        <Icon className="h-5 w-5 mr-3" />
-                        <span>{link.name}</span>
-                        {location.pathname === link.path && (
-                          <ChevronRight className="h-4 w-4 text-premium ml-auto" />
-                        )}
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-              </div>
-              
-              <motion.div 
-                variants={mobileMenuItemVariants}
-                custom={links.length}
-                className="flex flex-col space-y-4 p-6 mt-auto border-t border-border"
-              >
-                <div className="flex items-center justify-between px-4 py-3 bg-secondary/50 rounded-xl">
-                  <span className="text-sm font-medium">Theme</span>
-                  <ThemeToggle />
-                </div>
-                
-                {!currentUser && (
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-                    <Link to="/auth?mode=login" className="w-full">
-                      <Button variant="outline" size="lg" className="w-full rounded-xl border-premium/20 text-premium hover:bg-premium/5">
-                        Log in
-                      </Button>
-                    </Link>
-                    <Link to="/auth?mode=signup" className="w-full">
-                      <Button size="lg" className="w-full rounded-xl bg-gradient-to-r from-premium to-premium-dark hover:opacity-90">
-                        Sign up
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.nav>
       
       {/* Bottom Navigation for Mobile */}
