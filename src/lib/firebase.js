@@ -48,12 +48,27 @@ export const setupPresence = (userId) => {
   const handleVisibilityChange = async () => {
     try {
       const userRef = doc(db, "users", userId);
+      const isVisible = document.visibilityState === "visible";
+      
       await setDoc(userRef, {
-        isOnline: document.visibilityState === "visible",
+        isOnline: isVisible,
         lastSeen: serverTimestamp(),
       }, { merge: true });
     } catch (error) {
       console.error("Error updating visibility status:", error);
+    }
+  };
+
+  // Handle page load/reload
+  const handlePageLoad = async () => {
+    try {
+      const userRef = doc(db, "users", userId);
+      await setDoc(userRef, {
+        isOnline: true,
+        lastSeen: serverTimestamp(),
+      }, { merge: true });
+    } catch (error) {
+      console.error("Error updating online status on page load:", error);
     }
   };
 
@@ -86,13 +101,19 @@ export const setupPresence = (userId) => {
   // Set up event listeners
   window.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener("load", handlePageLoad);
+  
   cleanupFunctions.push(() => {
     window.removeEventListener("visibilitychange", handleVisibilityChange);
     window.removeEventListener("beforeunload", handleBeforeUnload);
+    window.removeEventListener("load", handlePageLoad);
   });
 
-  // Set initial status
+  // Set initial status and check current visibility
   setInitialStatus();
+  
+  // Immediately check visibility state
+  handleVisibilityChange();
 
   // Return cleanup function
   return () => {
@@ -139,8 +160,8 @@ export const registerUser = async (email, password, name) => {
         lastSeen: serverTimestamp(),
       });
       
-      // Set up presence
-      setupPresence(userCredential.user.uid);
+      // Presence is now handled by AuthContext
+      // No need to call setupPresence here
     }
     
     return { user: userCredential.user, error: null };
@@ -162,8 +183,8 @@ export const loginUser = async (email, password) => {
         lastSeen: serverTimestamp(),
       }, { merge: true });
       
-      // Set up presence
-      setupPresence(userCredential.user.uid);
+      // Presence is now handled by AuthContext
+      // No need to call setupPresence here
     }
     
     return { user: userCredential.user, error: null };

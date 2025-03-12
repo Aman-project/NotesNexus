@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { setupPresence } from "@/lib/firebase";
 
 const AuthContext = createContext({
   currentUser: null,
@@ -14,12 +15,30 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let cleanupPresence = null;
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setIsLoading(false);
+      
+      // Clean up previous presence if exists
+      if (cleanupPresence) {
+        cleanupPresence();
+        cleanupPresence = null;
+      }
+      
+      // Set up presence for the current user
+      if (user) {
+        cleanupPresence = setupPresence(user.uid);
+      }
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      if (cleanupPresence) {
+        cleanupPresence();
+      }
+    };
   }, []);
 
   const value = {
