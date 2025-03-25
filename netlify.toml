@@ -4,6 +4,3 @@
 
 [build.environment]
   NODE_VERSION = "20.12.2"
-
-# Keep your existing build settings below
-# ...existing code... 
