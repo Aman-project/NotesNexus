@@ -167,7 +167,7 @@ const VideoCard = memo(({ video, onClick }) => {
           <div className="flex items-center justify-between mt-auto pt-2 text-xs font-medium text-muted-foreground/90">
             <div className="flex items-center">
               <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-              <span>{formatDate(video.date)}</span>
+              <span>{formatDate(video.publishedAt)}</span>
             </div>
             
             <div className="flex items-center gap-2">
