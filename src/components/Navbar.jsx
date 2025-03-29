@@ -84,8 +84,8 @@ const Navbar = () => {
             to="/" 
             className="text-lg sm:text-xl font-bold text-foreground tracking-tight relative group"
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/90">Notes</span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-premium to-premium-dark">Nexus</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/90">Magic</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-premium to-premium-dark">Notes</span>
             <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-premium to-premium-dark group-hover:w-full transition-all duration-300 ease-in-out"></span>
           </Link>
 

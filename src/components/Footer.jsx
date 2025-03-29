@@ -50,8 +50,8 @@ const Footer = () => {
           <motion.div variants={itemVariants} className="col-span-2 space-y-4 sm:space-y-6">
             <Link to="/" className="inline-block">
               <h3 className="text-xl sm:text-2xl font-bold mb-2">
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/90">Notes</span>
-                <span className="bg-clip-text text-transparent bg-gradient-to-r from-premium to-premium-dark">Nexus</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/90">Magic</span>
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-premium to-premium-dark">Notes</span>
               </h3>
             </Link>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
@@ -155,7 +155,7 @@ const Footer = () => {
               <li className="flex items-center">
                 <Mail className="h-5 w-5 mr-2 text-premium shrink-0" />
                 <span className="text-muted-foreground">
-                  <a href="mailto:info@notesnexus.com">info@notesnexus.com</a>
+                  <a href="mailto:info@magicnotes.com">info@magicnotes.com</a>
                 </span>
               </li>
             </ul>
@@ -167,7 +167,7 @@ const Footer = () => {
           className="border-t border-border mt-8 sm:mt-10 md:mt-12 pt-6 sm:pt-8 flex flex-col sm:flex-row justify-between items-center"
         >
           <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
-            © {new Date().getFullYear()} NotesNexus. All rights reserved.
+            © {new Date().getFullYear()} Magic Notes. All rights reserved.
           </p>
           <div className="flex space-x-4 mt-4 sm:mt-0 text-xs sm:text-sm">
             <Link to="#" className="text-muted-foreground hover:text-foreground transition-colors">
