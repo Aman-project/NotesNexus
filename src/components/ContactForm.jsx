@@ -47,7 +47,7 @@ const ContactForm = () => {
   const { submit: submitForm } = useWeb3Forms({
     access_key: ACCESS_KEY,
     settings: {
-      from_name: "Notes_Nexus",
+      from_name: "Magic Notes",
       subject: "New Contact Form Submission",
     },
     onSuccess: (message, data) => {
