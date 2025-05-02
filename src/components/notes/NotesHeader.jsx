@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 
-const NotesHeader = ({ searchQuery, setSearchQuery }) => {
+const NotesHeader = ({ searchQuery, setSearchQuery, children }) => {
   return (
     <motion.header 
       className="relative py-16 md:py-24 overflow-hidden"
@@ -54,14 +54,14 @@ const NotesHeader = ({ searchQuery, setSearchQuery }) => {
             Access our comprehensive collection of expertly crafted notes to enhance your learning experience and achieve academic excellence.
           </motion.p>
           
-          {/* Search Bar */}
+          {/* Search Bar and Action Buttons */}
           <motion.div
-            className="max-w-xl mx-auto"
+            className="max-w-xl mx-auto flex items-center justify-center gap-4"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <div className="relative hidden md:block">
+            <div className="relative hidden md:block flex-grow">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
                 type="text"
@@ -71,6 +71,7 @@ const NotesHeader = ({ searchQuery, setSearchQuery }) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+            {children}
           </motion.div>
         </div>
       </div>

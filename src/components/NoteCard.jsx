@@ -6,11 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import NoteViewModal from "./NoteViewModal";
+import { getFileDownloadURL } from "@/lib/appwrite";
 
 const NoteCard = memo(({ note }) => {
   const [expanded, setExpanded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // Map color string to Tailwind class and gradient
   const colorMap = {
@@ -74,17 +76,40 @@ const NoteCard = memo(({ note }) => {
     return titleMap[title] || null;
   };
   
-  const handleDownload = (e) => {
+  const handleDownload = async (e) => {
     e.stopPropagation(); // Prevent card click
-    const pdfFilename = getPdfFilename(note.title);
-    if (pdfFilename) {
-      // Create a link element to trigger the download
-      const link = document.createElement('a');
-      link.href = `/Notes/${pdfFilename}`;
-      link.download = pdfFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    setIsDownloading(true);
+    
+    try {
+      if (note.isAppwriteFile && note.fileId) {
+        // For Appwrite files, get the download URL and trigger the download
+        console.log("Downloading Appwrite file:", note.fileId);
+        const downloadUrl = getFileDownloadURL(note.fileId);
+        
+        // Create a temporary anchor to trigger the download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', note.fileName || `${note.title}.pdf`);
+        link.setAttribute('target', '_blank');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // For static files using the original approach
+        const pdfFilename = getPdfFilename(note.title);
+        if (pdfFilename) {
+          const link = document.createElement('a');
+          link.href = `/Notes/${pdfFilename}`;
+          link.download = pdfFilename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    } finally {
+      setIsDownloading(false);
     }
   };
   
@@ -177,7 +202,7 @@ const NoteCard = memo(({ note }) => {
                       <div>
                         <p className="text-sm sm:text-base font-medium text-foreground/90">Contents:</p>
                         <ul className="text-sm text-foreground/80 mt-1 space-y-1 list-disc list-inside">
-                          {note.contents.map((item, index) => (
+                          {note.contents && note.contents.map((item, index) => (
                             <li key={index}>{item}</li>
                           ))}
                         </ul>
@@ -185,7 +210,7 @@ const NoteCard = memo(({ note }) => {
                     </div>
                     
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {note.tags.map((tag, index) => (
+                      {note.tags && note.tags.map((tag, index) => (
                         <Badge 
                           key={index}
                           variant="secondary"
@@ -204,11 +229,12 @@ const NoteCard = memo(({ note }) => {
           <CardFooter className="p-3 sm:p-4 pt-2 border-t border-border mt-auto">
             <div className="w-full flex justify-between items-center">
               <span className="text-xs font-medium text-muted-foreground/90">
-                {note.pages} pages
+                {note.fileName || `${note.pages} pages`}
               </span>
               <Button 
                 variant="ghost" 
-                size="sm" 
+                size="sm"
+                disabled={isDownloading}
                 className={cn(
                   "text-xs font-medium h-7 sm:h-8 px-2 rounded-full transition-all",
                   colorStyle.text,
@@ -217,7 +243,11 @@ const NoteCard = memo(({ note }) => {
                 )}
                 onClick={handleDownload}
               >
-                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                {isDownloading ? (
+                  <span className="animate-spin h-3 w-3 sm:h-4 sm:w-4 border-2 border-current border-t-transparent rounded-full mr-1" />
+                ) : (
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                )}
                 Download
               </Button>
             </div>

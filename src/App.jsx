@@ -23,6 +23,7 @@ import Settings from "./pages/Settings";
 import Chat from "./pages/Chat";
 import VerifyEmail from "./pages/VerifyEmail";
 import AdminDashboard from "@/pages/AdminDashboard";
+import UploadNote from "@/components/notes/UploadNote";
 
 // Prevent flash of incorrect theme
 const ThemeScript = () => {
@@ -76,7 +77,17 @@ const router = createBrowserRouter(
           <ScrollToTop />
           <Notes />
         </ProtectedRoute>
-      ) 
+      ),
+      children: [
+        { 
+          path: "", 
+          element: null 
+        },
+        {
+          path: "upload",
+          element: <UploadNote />
+        }
+      ]
     },
     { 
       path: "/videos", 

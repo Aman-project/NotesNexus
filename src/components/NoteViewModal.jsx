@@ -1,11 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Download, FileText, Tag } from "lucide-react";
+import { X, Download, FileText, Tag, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { getFilePreview, getFileDownloadURL } from "@/lib/appwrite";
 
 const NoteViewModal = ({ isOpen, onClose, note }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  
   if (!note) return null;
 
   // Map color string to Tailwind class and gradient (same as in NoteCard)
@@ -70,17 +74,55 @@ const NoteViewModal = ({ isOpen, onClose, note }) => {
     return titleMap[title] || null;
   };
   
-  const handleDownload = () => {
-    const pdfFilename = getPdfFilename(note.title);
-    if (pdfFilename) {
-      // Create a link element to trigger the download
-      const link = document.createElement('a');
-      link.href = `/Notes/${pdfFilename}`;
-      link.download = pdfFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    
+    try {
+      if (note.isAppwriteFile && note.fileId) {
+        // For Appwrite files, get the download URL and trigger the download
+        console.log("Downloading Appwrite file:", note.fileId);
+        const downloadUrl = getFileDownloadURL(note.fileId);
+        
+        // Create a temporary anchor to trigger the download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', note.fileName || `${note.title}.pdf`);
+        link.setAttribute('target', '_blank');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // For static files using the original approach
+        const pdfFilename = getPdfFilename(note.title);
+        if (pdfFilename) {
+          const link = document.createElement('a');
+          link.href = `/Notes/${pdfFilename}`;
+          link.download = pdfFilename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+      }
+    } catch (error) {
+      console.error("Error downloading file:", error);
+    } finally {
+      setIsDownloading(false);
     }
+  };
+
+  // Get PDF preview URL
+  const getPreviewUrl = () => {
+    if (note.isAppwriteFile && note.fileId) {
+      return getFilePreview(note.fileId);
+    } else {
+      const pdfFilename = getPdfFilename(note.title);
+      return pdfFilename ? `/Notes/${pdfFilename}` : null;
+    }
+  };
+
+  // Toggle PDF preview
+  const togglePreview = () => {
+    setShowPreview(!showPreview);
   };
 
   return (
@@ -98,7 +140,10 @@ const NoteViewModal = ({ isOpen, onClose, note }) => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="bg-background border border-border w-full max-w-2xl rounded-xl shadow-xl overflow-hidden"
+            className={cn(
+              "bg-background border border-border w-full max-w-2xl rounded-xl shadow-xl overflow-hidden",
+              showPreview && "max-w-4xl max-h-[90vh] flex flex-col"
+            )}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -128,56 +173,87 @@ const NoteViewModal = ({ isOpen, onClose, note }) => {
               </Badge>
               
               <h2 className="text-2xl font-bold">{note.title}</h2>
-              <p className="mt-2 text-foreground/80">{note.content}</p>
+              <p className="mt-2 text-foreground/80">{note.description || note.content}</p>
             </div>
             
-            {/* Content */}
-            <div className="p-5">
-              <div className="flex items-start mb-4">
-                <FileText className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
-                <div>
-                  <p className="text-base font-medium text-foreground/90">Contents:</p>
-                  <ul className="text-sm text-foreground/80 mt-1 space-y-1 list-disc list-inside">
-                    {note.contents && note.contents.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
+            {/* PDF Preview (when active) */}
+            {showPreview && (
+              <div className="flex-grow p-0 min-h-0 overflow-hidden">
+                <iframe 
+                  src={getPreviewUrl()} 
+                  className="w-full h-full border-0 bg-black/5 dark:bg-white/5" 
+                  title={`Preview of ${note.title}`}
+                />
               </div>
-              
-              {note.tags && (
-                <div className="flex flex-wrap gap-1 mt-4">
-                  {note.tags.map((tag, index) => (
-                    <Badge 
-                      key={index}
-                      variant="secondary"
-                      className="text-xs font-medium bg-secondary/50"
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
+            )}
+            
+            {/* Content (only shown when preview is not active) */}
+            {!showPreview && (
+              <div className="p-5">
+                <div className="flex items-start mb-4">
+                  <FileText className="h-5 w-5 mr-2 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-base font-medium text-foreground/90">Contents:</p>
+                    <ul className="text-sm text-foreground/80 mt-1 space-y-1 list-disc list-inside">
+                      {note.contents && note.contents.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              )}
-            </div>
+                
+                {note.tags && (
+                  <div className="flex flex-wrap gap-1 mt-4">
+                    {note.tags.map((tag, index) => (
+                      <Badge 
+                        key={index}
+                        variant="secondary"
+                        className="text-xs font-medium bg-secondary/50"
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             
             {/* Footer */}
             <div className="p-5 border-t border-border bg-muted/30">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">
-                  {note.date || note.createdAt}
-                </span>
-                <Button
-                  onClick={handleDownload}
-                  className={cn(
-                    "text-white",
-                    colorStyle.text,
-                    "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
-                    "shadow-sm hover:shadow-md transition-all"
-                  )}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
+                <div className="flex items-center">
+                  <span className="text-sm text-muted-foreground">
+                    {note.fileName || note.date || note.createdAt}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={togglePreview}
+                    className="text-foreground"
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    {showPreview ? "Hide Preview" : "View PDF"}
+                  </Button>
+                  
+                  <Button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className={cn(
+                      "text-white",
+                      colorStyle.text,
+                      "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+                      "shadow-sm hover:shadow-md transition-all"
+                    )}
+                  >
+                    {isDownloading ? (
+                      <span className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full" />
+                    ) : (
+                      <Download className="h-4 w-4 mr-2" />
+                    )}
+                    Download PDF
+                  </Button>
+                </div>
               </div>
             </div>
           </motion.div>
