@@ -1,4 +1,4 @@
-// Import the functions you need from the SDKs you need
+
 import { initializeApp } from "firebase/app";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail, sendEmailVerification, applyActionCode } from "firebase/auth";
 import { getFirestore, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, doc, getDoc, updateDoc, writeBatch, setDoc } from "firebase/firestore";
@@ -36,7 +36,7 @@ const updateOnlineStatus = async (userId, isOnline) => {
   }
 };
 
-// Set up presence system
+
 export const setupPresence = (userId) => {
   if (!userId) return () => {}; // Return empty cleanup function if no userId
 
@@ -58,7 +58,7 @@ export const setupPresence = (userId) => {
     }
   };
 
-  // Handle page load/reload
+
   const handlePageLoad = async () => {
     try {
       const userRef = doc(db, "users", userId);
@@ -71,7 +71,6 @@ export const setupPresence = (userId) => {
     }
   };
 
-  // Handle before unload
   const handleBeforeUnload = async () => {
     try {
       const userRef = doc(db, "users", userId);
@@ -84,7 +83,6 @@ export const setupPresence = (userId) => {
     }
   };
 
-  // Set initial online status
   const setInitialStatus = async () => {
     try {
       const userRef = doc(db, "users", userId);
@@ -97,7 +95,6 @@ export const setupPresence = (userId) => {
     }
   };
 
-  // Set up event listeners
   window.addEventListener("visibilitychange", handleVisibilityChange);
   window.addEventListener("beforeunload", handleBeforeUnload);
   window.addEventListener("load", handlePageLoad);
@@ -108,23 +105,17 @@ export const setupPresence = (userId) => {
     window.removeEventListener("load", handlePageLoad);
   });
 
-  // Set initial status and check current visibility
   setInitialStatus();
   
-  // Immediately check visibility state
   handleVisibilityChange();
 
-  // Return cleanup function
   return () => {
-    // Clean up event listeners
     cleanupFunctions.forEach(cleanup => cleanup());
     
-    // Clean up connection listener if it exists
     if (unsubscribe) {
       unsubscribe();
     }
     
-    // Set offline status one last time
     const userRef = doc(db, "users", userId);
     setDoc(userRef, {
       isOnline: false,
@@ -135,18 +126,15 @@ export const setupPresence = (userId) => {
   };
 };
 
-// Register user with admin check
 export const registerUser = async (email, password, name) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     
-    // Update the user profile with the name
     if (userCredential.user) {
       await updateProfile(userCredential.user, {
         displayName: name
       });
       
-      // Create user document
       const userRef = doc(db, "users", userCredential.user.uid);
       await setDoc(userRef, {
         uid: userCredential.user.uid,
@@ -159,8 +147,6 @@ export const registerUser = async (email, password, name) => {
         lastSeen: serverTimestamp(),
       });
       
-      // Presence is now handled by AuthContext
-      // No need to call setupPresence here
     }
     
     return { user: userCredential.user, error: null };
